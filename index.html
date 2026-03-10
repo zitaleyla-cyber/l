@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EB Norm Portal | Bilal Versiyonu</title>
+    <title>EB Norm Portal | Bilal Versiyonu Revize</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -27,7 +27,6 @@
         th { background: #f8fafc; padding: 12px; text-align: left; color: #64748b; font-size: 11px; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; }
         td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
 
-        /* Grafik Kutusu Küçültme */
         .chart-container { position: relative; height: 250px; width: 100%; }
 
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px; }
@@ -71,6 +70,11 @@
         <div class="filter-bar">
             <input type="text" id="qSearch" class="f-input" placeholder="Pozisyon/Birim ara..." oninput="renderTable()">
             <select id="qBirim" class="f-input" onchange="renderTable()"><option value="">Tüm Birimler</option></select>
+            <select id="qYaka" class="f-input" onchange="renderTable()">
+                <option value="">Tüm Yakalar</option>
+                <option value="Mavi yaka">Mavi Yaka</option>
+                <option value="Beyaz yaka">Beyaz Yaka</option>
+            </select>
             <select id="qStatus" class="f-input" onchange="renderTable()">
                 <option value="">Doluluk Tümü</option>
                 <option value="vacant">Boş Kadrolar 🔴</option>
@@ -146,7 +150,6 @@ async function loadData() {
     renderDemands();
 }
 
-// TALEP SİSTEMİ
 async function addDemand() {
     const b = document.getElementById('t-birim').value;
     const p = document.getElementById('t-poz').value;
@@ -171,16 +174,20 @@ async function deleteDemand(id) {
     location.reload();
 }
 
-// TABLO VE FİLTRE
+// TABLO VE FİLTRE DÜZELTME
 function renderTable() {
     const s = document.getElementById('qSearch').value.toLowerCase();
     const b = document.getElementById('qBirim').value;
+    const y = document.getElementById('qYaka').value; // 1. YAKA FİLTRESİ DEĞİŞKENİ (İSTEK 1)
     const st = document.getElementById('qStatus').value;
     
     document.getElementById('tableBody').innerHTML = db.pos.filter(p => {
         const fiili = p.names ? p.names.length : 0;
         const statusMatch = (!st) || (st==='vacant' && p.norm > fiili) || (st==='full' && p.norm <= fiili);
-        return (p.poz.toLowerCase().includes(s) || p.birim.toLowerCase().includes(s)) && (!b || p.birim === b) && statusMatch;
+        return (p.poz.toLowerCase().includes(s) || p.birim.toLowerCase().includes(s)) && 
+               (!b || p.birim === b) && 
+               (!y || p.yaka === y) && // 1. YAKA FİLTRE MANTIĞI (İSTEK 1)
+               statusMatch;
     }).map(p => {
         const fiili = p.names ? p.names.length : 0;
         return `<tr><td><b>${p.birim}</b></td><td>${p.poz}</td><td>${p.norm}</td><td>${fiili}</td>
@@ -188,6 +195,7 @@ function renderTable() {
     }).join('');
 }
 
+// GRAFİK HESAPLAMA DÜZELTME (İSTEK 2)
 function renderCharts() {
     const norm = db.pos.reduce((a,b)=>a+(b.norm||0),0);
     const fiili = db.pos.reduce((a,b)=>a+(b.names?b.names.length:0),0);
@@ -203,13 +211,14 @@ function renderCharts() {
         return `<tr><td><b>${p.birim}</b></td><td>${p.poz}</td><td>${p.norm}</td><td>${f}</td><td style="color:var(--red); font-weight:bold">${p.norm-f}</td></tr>`;
     }).join('');
 
-    // GRAFİK ÇİZİMİ (KÜÇÜLTÜLMÜŞ)
-    const m = db.pos.filter(p => p.yaka && p.yaka.includes('Mavi')).length;
-    const b = db.pos.filter(p => p.yaka && p.yaka.includes('Beyaz')).length;
+    // GRAFİK ÇİZİMİ (İSTEK 2 DÜZELTİLDİ: NORM SAYILARINI TOPLUYORUZ)
+    const mNorm = db.pos.filter(p => p.yaka && p.yaka.includes('Mavi')).reduce((a, b) => a + (b.norm || 0), 0); // DOĞRU HESAP
+    const bNorm = db.pos.filter(p => p.yaka && p.yaka.includes('Beyaz')).reduce((a, b) => a + (b.norm || 0), 0); // DOĞRU HESAP
+    
     if(charts.c1) charts.c1.destroy();
     charts.c1 = new Chart(document.getElementById('chartCollar'), {
         type: 'doughnut',
-        data: { labels: ['Mavi','Beyaz'], datasets:[{data:[m,b], backgroundColor:['#10b981','#4f46e5']}] },
+        data: { labels: ['Mavi','Beyaz'], datasets:[{data:[mNorm, bNorm], backgroundColor:['#10b981','#4f46e5']}] },
         options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
     });
 }
