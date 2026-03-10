@@ -3,170 +3,145 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EB Norm Kadro - Bulut Sistemi</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>EB Norm Portal - Canlı Sistem</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root {
-            --bg: #f1f5f9; --sidebar: #0f172a; --card: #ffffff; --accent: #4f46e5;
-            --text: #1e293b; --muted: #64748b; --border: #e2e8f0;
-            --green: #10b981; --red: #ef4444; --orange: #f59e0b;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
-
-        .sidebar { width: 260px; background: var(--sidebar); color: white; padding: 25px; display: flex; flex-direction: column; flex-shrink: 0; }
-        .nav-btn { padding: 12px 15px; cursor: pointer; border-radius: 10px; margin-bottom: 8px; color: #94a3b8; border: none; background: none; width: 100%; text-align: left; font-weight: 600; display: flex; align-items: center; gap: 10px; transition: 0.2s; }
-        .nav-btn:hover, .nav-btn.active { background: var(--accent); color: white; }
+        /* CSS AYARLARI (Senin şık tasarımın) */
+        :root { --bg: #f1f5f9; --sidebar: #0f172a; --accent: #4f46e5; --card: #ffffff; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); display: flex; height: 100vh; margin: 0; }
+        .sidebar { width: 260px; background: var(--sidebar); color: white; padding: 20px; display: flex; flex-direction: column; }
         .main { flex: 1; overflow-y: auto; padding: 25px; }
-        .card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        
-        table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        th { text-align: left; padding: 14px; background: #f8fafc; border-bottom: 2px solid var(--border); color: var(--muted); text-transform: uppercase; font-size: 11px; }
-        td { padding: 14px; border-bottom: 1px solid #f1f5f9; }
-        .badge { padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 700; color: white; }
+        .nav-btn { padding: 12px; cursor: pointer; border-radius: 10px; color: #94a3b8; border: none; background: none; width: 100%; text-align: left; font-weight: 600; margin-bottom: 5px; }
+        .nav-btn.active { background: var(--accent); color: white; }
+        .card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 20px; }
+        .stat-card { background: white; padding: 20px; border-radius: 15px; text-align: center; border-bottom: 4px solid var(--accent); }
         .hidden { display: none !important; }
-        #upload-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.95); z-index: 2000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
+        input, select, textarea { width: 100%; padding: 10px; margin-top: 10px; border-radius: 8px; border: 1px solid #ddd; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 13px; }
     </style>
 </head>
 <body>
 
 <div class="sidebar">
-    <div style="font-size:18px; font-weight:800; margin-bottom:30px; text-align:center;">EB NORM PORTAL</div>
+    <h2 style="text-align:center; margin-bottom:30px;">EB NORM PORTAL</h2>
     <button class="nav-btn active" onclick="showView('table', this)">📋 Kadro Listesi</button>
     <button class="nav-btn" onclick="showView('dash', this)">📊 Analiz Paneli</button>
     <button class="nav-btn" onclick="showView('demands', this)">💡 Talep Yönetimi</button>
-    
-    <div style="margin-top: auto;">
-        <button class="nav-btn" onclick="syncToCloud()" style="color: #10b981;">☁️ Buluta Yedekle</button>
-        <button class="nav-btn" onclick="triggerUpload()" style="color: #60a5fa;">📂 CSV Yükle</button>
+    <div style="margin-top:auto">
+        <button class="nav-btn" onclick="syncToCloud()" style="color:#10b981">☁️ Buluta Yedekle</button>
+        <button class="nav-btn" onclick="location.reload()" style="color:#60a5fa">🔄 Sayfayı Yenile</button>
     </div>
 </div>
 
 <div class="main">
-    <div id="upload-overlay">
-        <div style="background:white; padding:40px; border-radius:20px; text-align:center; border:3px dashed var(--accent); cursor:pointer;" onclick="document.getElementById('fileInput').click()">
-            <h1 style="font-size:40px;">📂</h1>
-            <h2>Ana CSV Dosyasını Seçin</h2>
-            <input type="file" id="fileInput" class="hidden" accept=".csv" onchange="handleFile(this.files[0])">
-        </div>
-    </div>
-
-    <h2 id="view-title" style="margin-bottom:20px">Kadro Durum Tablosu</h2>
-
     <div id="view-table">
-        <div class="card" style="padding:0; overflow:hidden;">
+        <div class="card">
+            <input type="text" id="search" placeholder="Birim veya Pozisyon ara..." oninput="renderData()">
             <table>
-                <thead><tr><th style="width:20px"></th><th>Birim</th><th>Pozisyon</th><th>Yaka</th><th>Norm</th><th>Fiili</th><th>Doluluk</th></tr></thead>
+                <thead><tr><th>Birim</th><th>Pozisyon</th><th>Norm</th><th>Fiili</th><th>Doluluk</th></tr></thead>
                 <tbody id="tableBody"></tbody>
             </table>
         </div>
     </div>
 
     <div id="view-dash" class="hidden">
-        <div class="card"><h4>Yaka Dağılımı</h4><canvas id="chartCollar"></canvas></div>
+        <div class="stats-grid" id="statsGrid"></div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+            <div class="card"><h3>Yaka Dağılımı</h3><canvas id="chartCollar"></canvas></div>
+            <div class="card"><h3>Birim Bazlı Norm</h3><canvas id="chartUnits"></canvas></div>
+        </div>
     </div>
 
     <div id="view-demands" class="hidden">
-        <div class="card">
-            <h3>Aktif Talepler (Buluttan Canlı)</h3>
-            <table style="margin-top:15px"><thead><tr><th>Birim</th><th>Pozisyon</th><th>Durum</th></tr></thead><tbody id="demandTableBody"></tbody></table>
+        <div style="display:grid; grid-template-columns: 1fr 2fr; gap:20px;">
+            <div class="card">
+                <h3>Yeni Talep Oluştur</h3>
+                <input type="text" id="t-birim" placeholder="Hangi Birim?">
+                <input type="text" id="t-poz" placeholder="Hangi Pozisyon?">
+                <select id="t-yaka"><option value="Mavi yaka">Mavi Yaka</option><option value="Beyaz yaka">Beyaz Yaka</option></select>
+                <textarea id="t-neden" placeholder="Talep Gerekçesi" rows="4"></textarea>
+                <button onclick="addDemand()" style="width:100%; margin-top:15px; background:#10b981; color:white; padding:12px; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">Talebi Gönder</button>
+            </div>
+            <div class="card">
+                <h3>Aktif Talepler (Buluttan Canlı)</h3>
+                <table id="demandTable">
+                    <thead><tr><th>Birim</th><th>Pozisyon</th><th>Neden</th><th>Durum</th></tr></thead>
+                    <tbody id="demandBody"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-// --- SUPABASE AYARLARI ---
 const supabaseUrl = 'https://kvnkjzympplbpvvmuqdw.supabase.co';
-const supabaseKey = 'sb_publishable_i5mhGMghGZM7BczFyYjnlA_pBd4SbaN'; // <--- BURAYI DOLDUR!
+const supabaseKey = 'EYJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; // <--- BURAYA KENDİ ANON KEY'İNİ YAPIŞTIR!
 const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
 let db = { pos: [], demands: [] };
-// 1. BULUTTAN VERİ ÇEK VE SİSTEMİ AÇ
-async function loadData() {
-    console.log("Bulut kontrol ediliyor...");
-    const { data: posData, error } = await _supabase.from('norm_kadro').select('*');
-    
-    if (posData && posData.length > 0) {
-        db.pos = posData;
-        // BULUTTA VERİ VARSA SİYAH EKRANI KAPAT
-        document.getElementById('upload-overlay').classList.add('hidden');
-        renderData();
-        renderCharts(); // Veri gelince grafiği çiz
-    }
+let charts = {};
+
+async function loadInitialData() {
+    const { data: pos } = await _supabase.from('norm_kadro').select('*');
+    const { data: dem } = await _supabase.from('demands').select('*').order('created_at', { ascending: false });
+    if(pos) db.pos = pos;
+    if(dem) db.demands = dem;
+    renderData();
+    renderDemands();
 }
 
-// 2. YAKA DAĞILIMI GRAFİĞİNİ ÇİZ (SORDUĞUN KISIM BURASI)
-function renderCharts() {
-    const canvas = document.getElementById('chartCollar');
-    if(!canvas) return;
+// --- TALEP EKLEME FONKSİYONU ---
+async function addDemand() {
+    const birim = document.getElementById('t-birim').value;
+    const poz = document.getElementById('t-poz').value;
+    const yaka = document.getElementById('t-yaka').value;
+    const neden = document.getElementById('t-neden').value;
 
-    if(charts.collar) charts.collar.destroy(); // Eski grafiği temizle
+    if(!birim || !poz) return alert("Lütfen birim ve pozisyon girin!");
 
-    // Mavi ve Beyaz yakaları db.pos içinden sayıyoruz
-    const maviCount = db.pos.filter(p => p.yaka && p.yaka.toLowerCase().includes('mavi')).length;
-    const beyazCount = db.pos.filter(p => p.yaka && p.yaka.toLowerCase().includes('beyaz')).length;
+    const { data, error } = await _supabase.from('demands').insert([
+        { birim, pozisyon: poz, yaka, neden, durum: 'Beklemede' }
+    ]);
 
-    charts.collar = new Chart(canvas, {
-        type: 'doughnut',
-        data: {
-            labels: ['Mavi Yaka', 'Beyaz Yaka'],
-            datasets: [{
-                data: [maviCount, beyazCount],
-                backgroundColor: ['#10b981', '#4f46e5'],
-                borderWidth: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: { legend: { position: 'bottom' } }
-        }
-    });
-}
-
-// 3. BULUTA YEDEKLE
-async function syncToCloud() {
-    const { error } = await _supabase.from('norm_kadro').upsert(db.pos, { onConflict: 'birim,poz' });
     if(error) alert("Hata: " + error.message);
     else {
-        alert("✅ Bulut Başarıyla Güncellendi!");
-        renderCharts(); // Yedekleme sonrası grafikleri tazele
+        alert("Talep başarıyla iletildi!");
+        location.reload(); // Sayfayı yenileyip listeyi tazele
     }
 }
 
-// 4. CSV İŞLEME VE DİĞER FONKSİYONLAR
-function handleFile(file) {
-    const reader = new FileReader();
-    reader.onload = (e) => { processCSV(e.target.result); document.getElementById('upload-overlay').classList.add('hidden'); };
-    reader.readAsText(file, 'ISO-8859-9');
+function renderDemands() {
+    document.getElementById('demandBody').innerHTML = db.demands.map(d => `
+        <tr><td>${d.birim}</td><td>${d.pozisyon}</td><td>${d.neden || '-'}</td><td><b>${d.durum}</b></td></tr>
+    `).join('');
 }
 
-function processCSV(text) {
-    const rows = text.split(/\r?\n/).filter(r => r.trim() !== "").slice(1);
-    const temp = {};
-    rows.forEach(row => {
-        const c = row.split(';');
-        if(c.length >= 4) {
-            const birim = c[1].trim(); const poz = c[2].trim(); const yaka = c[3].trim(); const isim = (c[4] || "").trim();
-            const key = `${birim}-${poz}`;
-            if(!temp[key]) temp[key] = { birim, poz, yaka, norm: 0, names: [] };
-            temp[key].norm += 1;
-            if(isim.length > 1) temp[key].names.push(isim);
-        }
+// --- ANALİZ PANELİ (GRAFİK MOTORU) ---
+function renderCharts() {
+    // 1. Özet İstatistikler
+    const totalNorm = db.pos.reduce((a, b) => a + (b.norm || 0), 0);
+    const totalActual = db.pos.reduce((a, b) => a + (b.names ? b.names.length : 0), 0);
+    
+    document.getElementById('statsGrid').innerHTML = `
+        <div class="stat-card"><h4>Toplam Norm</h4><h2>${totalNorm}</h2></div>
+        <div class="stat-card" style="border-color:#10b981"><h4>Fiili Çalışan</h4><h2>${totalActual}</h2></div>
+        <div class="stat-card" style="border-color:#f59e0b"><h4>Eksik Kadro</h4><h2>${totalNorm - totalActual}</h2></div>
+        <div class="stat-card" style="border-color:#ef4444"><h4>Doluluk</h4><h2>%${Math.round((totalActual/totalNorm)*100)}</h2></div>
+    `;
+
+    // 2. Yaka Grafiği
+    const m = db.pos.filter(p => p.yaka && p.yaka.includes('Mavi')).length;
+    const b = db.pos.filter(p => p.yaka && p.yaka.includes('Beyaz')).length;
+    
+    if(charts.c1) charts.c1.destroy();
+    charts.c1 = new Chart(document.getElementById('chartCollar'), {
+        type: 'doughnut',
+        data: { labels: ['Mavi','Beyaz'], datasets: [{ data: [m,b], backgroundColor: ['#10b981','#4f46e5'] }] }
     });
-    db.pos = Object.values(temp);
-    renderData();
-    renderCharts(); // CSV yüklenince grafiği çiz
-}
-
-function renderData() {
-    const tbody = document.getElementById('tableBody');
-    tbody.innerHTML = db.pos.map((p, idx) => {
-        const f = p.names.length; 
-        const perc = p.norm > 0 ? Math.round((f / p.norm) * 100) : 0;
-        return `<tr><td>▶</td><td><b>${p.birim}</b></td><td>${p.poz}</td><td>${p.yaka}</td><td>${p.norm}</td><td>${f}</td><td>${perc}%</td></tr>`;
-    }).join('');
 }
 
 function showView(v, btn) {
@@ -174,11 +149,20 @@ function showView(v, btn) {
     btn.classList.add('active');
     ['view-table', 'view-dash', 'view-demands'].forEach(id => document.getElementById(id).classList.add('hidden'));
     document.getElementById('view-' + v).classList.remove('hidden');
-    if(v === 'dash') renderCharts(); // Analiz paneline geçince grafiği tazele
+    if(v === 'dash') renderCharts();
 }
 
-function triggerUpload() { document.getElementById('upload-overlay').classList.remove('hidden'); }
+function renderData() {
+    const search = document.getElementById('search').value.toLowerCase();
+    document.getElementById('tableBody').innerHTML = db.pos
+        .filter(p => p.birim.toLowerCase().includes(search) || p.poz.toLowerCase().includes(search))
+        .map(p => {
+            const f = p.names ? p.names.length : 0;
+            return `<tr><td><b>${p.birim}</b></td><td>${p.poz}</td><td>${p.norm}</td><td>${f}</td><td>%${Math.round((f/p.norm)*100)}</td></tr>`;
+        }).join('');
+}
 
-// Başlangıçta buluttan verileri çek
-loadData();
+loadInitialData();
 </script>
+</body>
+</html>
