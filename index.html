@@ -8,55 +8,48 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* SİSTEMİN MAKYAJI (CSS) */
         :root { --bg: #f1f5f9; --sidebar: #0f172a; --accent: #4f46e5; --card: #ffffff; --text: #1e293b; --green: #10b981; --red: #ef4444; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
         
-        /* SOL MENÜ (SIDEBAR) */
         .sidebar { width: 260px; background: var(--sidebar); color: white; padding: 25px; display: flex; flex-direction: column; flex-shrink: 0; height: 100vh; }
-        .sidebar h2 { font-size: 20px; font-weight: 800; margin-bottom: 30px; text-align: center; letter-spacing: 1px; }
+        .sidebar h2 { font-size: 20px; font-weight: 800; margin-bottom: 30px; text-align: center; }
         .nav-btn { padding: 12px 15px; cursor: pointer; border-radius: 10px; color: #94a3b8; border: none; background: none; width: 100%; text-align: left; font-weight: 600; margin-bottom: 8px; transition: 0.3s; display: flex; align-items: center; gap: 10px; }
         .nav-btn:hover, .nav-btn.active { background: var(--accent); color: white; }
         
-        /* ANA İÇERİK ALANI */
-        .main { flex: 1; overflow-y: auto; padding: 25px; background: var(--bg); }
+        .main { flex: 1; overflow-y: auto; padding: 25px; }
         .card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; }
         
-        /* FİLTRE ÇUBUĞU */
         .filter-bar { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
-        .f-input { padding: 10px 15px; border-radius: 10px; border: 1px solid #e2e8f0; flex: 1; min-width: 150px; outline: none; transition: 0.2s; }
-        .f-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+        .f-input { padding: 10px 15px; border-radius: 10px; border: 1px solid #e2e8f0; flex: 1; min-width: 150px; outline: none; }
 
-        /* TABLOLAR */
-        table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; }
-        th { background: #f8fafc; padding: 15px; text-align: left; color: #64748b; font-size: 11px; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; font-weight: 700; }
-        td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
-        tr:hover { background-color: #fcfcfd; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th { background: #f8fafc; padding: 12px; text-align: left; color: #64748b; font-size: 11px; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; }
+        td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
 
-        /* ANALİZ KARTLARI */
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 25px; }
-        .stat-card { background: white; padding: 20px; border-radius: 15px; border-left: 6px solid var(--accent); box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
-        .stat-card h4 { font-size: 12px; color: #64748b; margin-bottom: 8px; text-transform: uppercase; }
-        .stat-card h2 { font-size: 28px; font-weight: 800; }
+        /* Grafik Kutusu Küçültme */
+        .chart-container { position: relative; height: 250px; width: 100%; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .stat-card { background: white; padding: 15px; border-radius: 12px; border-left: 5px solid var(--accent); }
+        .stat-card h2 { font-size: 24px; font-weight: 800; }
 
         .hidden { display: none !important; }
         #upload-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.9); z-index: 1000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
-        .btn-green { background: var(--green); color: white; padding: 12px; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.2s; }
-        .btn-green:hover { opacity: 0.9; transform: translateY(-1px); }
+        
+        input, select, textarea { width: 100%; padding: 10px; margin-top: 5px; border-radius: 8px; border: 1px solid #ddd; }
+        .btn-green { background: var(--green); color: white; padding: 12px; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; width: 100%; }
     </style>
 </head>
 <body>
 
 <div id="upload-overlay" class="hidden">
-    <div class="card" style="text-align:center; min-width: 450px; padding: 40px;">
-        <h1 style="font-size: 40px; margin-bottom: 10px;">📂</h1>
-        <h2 style="margin-bottom:20px;">Veri Dosyası Yükle</h2>
-        <p style="color:#64748b; margin-bottom:20px; font-size: 14px;">Elinizdeki güncel CSV dosyasını seçerek SQL'i güncelleyin.</p>
-        <input type="file" id="csvFile" accept=".csv" style="margin-bottom:25px; border: 1px solid #eee; padding: 10px; width: 100%; border-radius: 8px;">
+    <div class="card" style="text-align:center; min-width: 400px;">
+        <h2>📂 Dosya Yükle</h2>
+        <input type="file" id="csvFile" accept=".csv" style="margin: 20px 0;">
         <div style="display:flex; gap:10px;">
-            <button onclick="processAndSync()" class="btn-green" style="flex:2">Veritabanına Gönder</button>
-            <button onclick="toggleUpload(false)" style="flex:1; background:#64748b; color:white; border:none; border-radius:10px; cursor:pointer; font-weight:600;">Kapat</button>
+            <button onclick="processAndSync()" class="btn-green" style="flex:2">SQL'e Gönder</button>
+            <button onclick="toggleUpload(false)" style="flex:1; background:#64748b; color:white; border:none; border-radius:10px; cursor:pointer;">Kapat</button>
         </div>
     </div>
 </div>
@@ -76,22 +69,17 @@
 <div class="main">
     <div id="view-table">
         <div class="filter-bar">
-            <input type="text" id="qSearch" class="f-input" placeholder="Pozisyon veya Birim ara..." oninput="renderTable()">
+            <input type="text" id="qSearch" class="f-input" placeholder="Pozisyon/Birim ara..." oninput="renderTable()">
             <select id="qBirim" class="f-input" onchange="renderTable()"><option value="">Tüm Birimler</option></select>
-            <select id="qYaka" class="f-input" onchange="renderTable()">
-                <option value="">Tüm Yakalar</option>
-                <option value="Mavi yaka">Mavi Yaka</option>
-                <option value="Beyaz yaka">Beyaz Yaka</option>
-            </select>
             <select id="qStatus" class="f-input" onchange="renderTable()">
                 <option value="">Doluluk Tümü</option>
-                <option value="vacant">Sadece Boş Kadrolar 🔴</option>
-                <option value="full">Tümü Dolu ✅</option>
+                <option value="vacant">Boş Kadrolar 🔴</option>
+                <option value="full">Tam Kadrolar ✅</option>
             </select>
         </div>
         <div class="card" style="padding:0; overflow:hidden;">
             <table>
-                <thead><tr><th>Birim</th><th>Pozisyon</th><th>Yaka</th><th>Norm</th><th>Fiili</th><th>Durum</th></tr></thead>
+                <thead><tr><th>Birim</th><th>Pozisyon</th><th>Norm</th><th>Fiili</th><th>Durum</th></tr></thead>
                 <tbody id="tableBody"></tbody>
             </table>
         </div>
@@ -99,28 +87,50 @@
 
     <div id="view-dash" class="hidden">
         <div class="stats-grid" id="statsGrid"></div>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-bottom: 25px;">
-            <div class="card"><h3>📊 Yaka Dağılımı</h3><canvas id="chartCollar" height="200"></canvas></div>
-            <div class="card"><h3>🏢 Birim Doluluk Oranları</h3><canvas id="chartUnits" height="200"></canvas></div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+            <div class="card">
+                <h3>Yaka Dağılımı</h3>
+                <div class="chart-container"><canvas id="chartCollar"></canvas></div>
+            </div>
+            <div class="card">
+                <h3>Birim Doluluk</h3>
+                <div class="chart-container"><canvas id="chartUnits"></canvas></div>
+            </div>
         </div>
-        <div class="card" style="padding:0; overflow:hidden;">
-            <h3 style="padding:20px; background:#fff5f5; color:#c53030;">🔴 Acil: Boş Kadrolar (Eksik Listesi)</h3>
+        <div class="card" style="padding:0; overflow:hidden; margin-top: 20px;">
+            <h3 style="padding:15px; border-bottom: 2px solid #eee; color: var(--red);">Boş Kadrolar</h3>
             <table>
-                <thead><tr><th>Birim</th><th>Pozisyon</th><th>Norm</th><th>Fiili</th><th>Eksik Sayı</th></tr></thead>
+                <thead><tr><th>Birim</th><th>Pozisyon</th><th>Norm</th><th>Fiili</th><th>Eksik</th></tr></thead>
                 <tbody id="vacantBody"></tbody>
             </table>
         </div>
     </div>
 
     <div id="view-demands" class="hidden">
-        <div class="card"><h3>💡 Talep Yönetim Paneli</h3><p style="margin-top:10px; color:#64748b;">Buradan yeni kadro taleplerini yönetebilirsiniz.</p></div>
+        <div style="display:grid; grid-template-columns: 1fr 2fr; gap:20px;">
+            <div class="card">
+                <h3>Yeni Talep</h3>
+                <input type="text" id="t-birim" placeholder="Birim Adı">
+                <input type="text" id="t-poz" placeholder="Pozisyon">
+                <select id="t-yaka"><option value="Mavi yaka">Mavi Yaka</option><option value="Beyaz yaka">Beyaz Yaka</option></select>
+                <textarea id="t-neden" placeholder="Gerekçe" rows="3"></textarea>
+                <button onclick="addDemand()" class="btn-green" style="margin-top:10px;">Talebi Gönder</button>
+            </div>
+            <div class="card" style="padding:0; overflow:hidden;">
+                <h3 style="padding:15px">Aktif Talepler</h3>
+                <table>
+                    <thead><tr><th>Birim</th><th>Pozisyon</th><th>Durum</th><th>Sil</th></tr></thead>
+                    <tbody id="demandBody"></tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </div>
 
 <script>
-// --- SUPABASE AYARLARI ---
+// --- KEY GÖMÜLDÜ ---
 const supabaseUrl = 'https://kvnkjzympplbpvvmuqdw.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt2bmtqenltcHBsYnB2dm11cWR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMDQ3NDcsImV4cCI6MjA4ODY4MDc0N30.Ajf2gASU_PxhTKZvH0UDg-XXmbCj3bJYww-otWEI73w'; // <--- BURAYA KENDİ ANON KEY'İNİ YAPIŞTIR!
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt2bmtqenltcHBsYnB2dm11cWR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMDQ3NDcsImV4cCI6MjA4ODY4MDc0N30.Ajf2gASU_PxhTKZvH0UDg-XXmbCj3bJYww-otWEI73w';
 const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
 let db = { pos: [], demands: [] };
@@ -128,69 +138,85 @@ let charts = {};
 
 async function loadData() {
     const { data: pos } = await _supabase.from('norm_kadro').select('*');
-    if(pos) {
-        db.pos = pos;
-        updateFilters();
-        renderTable();
-    }
+    const { data: dem } = await _supabase.from('demands').select('*').order('created_at', {ascending: false});
+    if(pos) db.pos = pos;
+    if(dem) db.demands = dem;
+    updateFilters();
+    renderTable();
+    renderDemands();
 }
 
-// TABLOYU ÇİZ VE FİLTRELE
-function renderTable() {
-    const search = document.getElementById('qSearch').value.toLowerCase();
-    const birim = document.getElementById('qBirim').value;
-    const yaka = document.getElementById('qYaka').value;
-    const status = document.getElementById('qStatus').value;
-    const tbody = document.getElementById('tableBody');
+// TALEP SİSTEMİ
+async function addDemand() {
+    const b = document.getElementById('t-birim').value;
+    const p = document.getElementById('t-poz').value;
+    const y = document.getElementById('t-yaka').value;
+    const n = document.getElementById('t-neden').value;
+    if(!b || !p) return alert("Hata: Bilgiler eksik!");
+    await _supabase.from('demands').insert([{ birim: b, pozisyon: p, yaka: y, neden: n, durum: 'Beklemede' }]);
+    alert("Talep başarıyla gönderildi.");
+    location.reload();
+}
 
-    tbody.innerHTML = db.pos.filter(p => {
+function renderDemands() {
+    document.getElementById('demandBody').innerHTML = db.demands.map(d => `
+        <tr><td>${d.birim}</td><td>${d.pozisyon}</td><td><b style="color:orange">${d.durum}</b></td>
+        <td><button onclick="deleteDemand(${d.id})" style="border:none; cursor:pointer; background:none;">🗑️</button></td></tr>
+    `).join('');
+}
+
+async function deleteDemand(id) {
+    if(!confirm("Silinsin mi?")) return;
+    await _supabase.from('demands').delete().eq('id', id);
+    location.reload();
+}
+
+// TABLO VE FİLTRE
+function renderTable() {
+    const s = document.getElementById('qSearch').value.toLowerCase();
+    const b = document.getElementById('qBirim').value;
+    const st = document.getElementById('qStatus').value;
+    
+    document.getElementById('tableBody').innerHTML = db.pos.filter(p => {
         const fiili = p.names ? p.names.length : 0;
-        const bCount = p.norm - fiili;
-        const matchesStatus = (!status) || (status === 'full' && bCount === 0) || (status === 'vacant' && bCount > 0);
-        
-        return (p.poz.toLowerCase().includes(search) || p.birim.toLowerCase().includes(search)) &&
-               (!birim || p.birim === birim) && (!yaka || p.yaka === yaka) && matchesStatus;
+        const statusMatch = (!st) || (st==='vacant' && p.norm > fiili) || (st==='full' && p.norm <= fiili);
+        return (p.poz.toLowerCase().includes(s) || p.birim.toLowerCase().includes(s)) && (!b || p.birim === b) && statusMatch;
     }).map(p => {
         const fiili = p.names ? p.names.length : 0;
-        const bCount = p.norm - fiili;
-        return `<tr><td><b>${p.birim}</b></td><td>${p.poz}</td><td>${p.yaka}</td><td>${p.norm}</td><td>${fiili}</td>
-                <td style="color:${bCount>0? 'var(--red)':'var(--green)'}; font-weight:700;">${bCount > 0 ? bCount + ' Boş' : 'Tam ✅'}</td></tr>`;
+        return `<tr><td><b>${p.birim}</b></td><td>${p.poz}</td><td>${p.norm}</td><td>${fiili}</td>
+                <td style="color:${p.norm>fiili ? 'var(--red)':'var(--green)'}; font-weight:700;">${p.norm>fiili ? (p.norm-fiili)+' Boş':'Tam'}</td></tr>`;
     }).join('');
 }
 
-// ANALİZ PANELİ VE GRAFİKLER
 function renderCharts() {
-    const totalNorm = db.pos.reduce((a,b)=>a+(b.norm||0),0);
-    const totalFiili = db.pos.reduce((a,b)=>a+(b.names?b.names.length:0),0);
-    
+    const norm = db.pos.reduce((a,b)=>a+(b.norm||0),0);
+    const fiili = db.pos.reduce((a,b)=>a+(b.names?b.names.length:0),0);
     document.getElementById('statsGrid').innerHTML = `
-        <div class="stat-card"><h4>Toplam Norm</h4><h2>${totalNorm}</h2></div>
-        <div class="stat-card" style="border-color:var(--green)"><h4>Fiili Personel</h4><h2>${totalFiili}</h2></div>
-        <div class="stat-card" style="border-color:var(--red)"><h4>Boş Kadro</h4><h2>${totalNorm-totalFiili}</h2></div>
-        <div class="stat-card" style="border-color:#f59e0b"><h4>Doluluk Oranı</h4><h2>%${Math.round((totalFiili/totalNorm)*100)}</h2></div>
+        <div class="stat-card"><h4>Toplam Norm</h4><h2>${norm}</h2></div>
+        <div class="stat-card"><h4>Fiili</h4><h2>${fiili}</h2></div>
+        <div class="stat-card"><h4>Boş</h4><h2 style="color:var(--red)">${norm-fiili}</h2></div>
+        <div class="stat-card"><h4>Doluluk</h4><h2>%${Math.round((fiili/norm)*100)}</h2></div>
     `;
 
-    // BOŞ KADRO LİSTESİ
-    document.getElementById('vacantBody').innerHTML = db.pos.filter(p => (p.norm - (p.names?p.names.length:0)) > 0).map(p => {
+    document.getElementById('vacantBody').innerHTML = db.pos.filter(p => p.norm > (p.names?p.names.length:0)).map(p => {
         const f = p.names ? p.names.length : 0;
-        return `<tr><td><b>${p.birim}</b></td><td>${p.poz}</td><td>${p.norm}</td><td>${f}</td><td style="color:var(--red); font-weight:800;">${p.norm-f}</td></tr>`;
+        return `<tr><td><b>${p.birim}</b></td><td>${p.poz}</td><td>${p.norm}</td><td>${f}</td><td style="color:var(--red); font-weight:bold">${p.norm-f}</td></tr>`;
     }).join('');
 
-    // GRAFİK: YAKA DAĞILIMI
-    const m = db.pos.filter(p => p.yaka.includes('Mavi')).length;
-    const b = db.pos.filter(p => p.yaka.includes('Beyaz')).length;
+    // GRAFİK ÇİZİMİ (KÜÇÜLTÜLMÜŞ)
+    const m = db.pos.filter(p => p.yaka && p.yaka.includes('Mavi')).length;
+    const b = db.pos.filter(p => p.yaka && p.yaka.includes('Beyaz')).length;
     if(charts.c1) charts.c1.destroy();
     charts.c1 = new Chart(document.getElementById('chartCollar'), {
         type: 'doughnut',
-        data: { labels: ['Mavi Yaka', 'Beyaz Yaka'], datasets: [{ data: [m,b], backgroundColor: ['#10b981', '#4f46e5'] }] },
-        options: { plugins: { legend: { position: 'bottom' } } }
+        data: { labels: ['Mavi','Beyaz'], datasets:[{data:[m,b], backgroundColor:['#10b981','#4f46e5']}] },
+        options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
     });
 }
 
-// CSV YÜKLEME VE SQL
 async function processAndSync() {
     const file = document.getElementById('csvFile').files[0];
-    if(!file) return alert("Dosya seçilmedi!");
+    if(!file) return;
     const reader = new FileReader();
     reader.onload = async (e) => {
         const rows = e.target.result.split(/\r?\n/).filter(r => r.trim() !== "").slice(1);
@@ -204,17 +230,18 @@ async function processAndSync() {
                 temp[k].norm += 1; if(n.length > 1) temp[k].names.push(n);
             }
         });
-        const { error } = await _supabase.from('norm_kadro').upsert(Object.values(temp), { onConflict: 'birim,poz,yaka' });
-        if(!error) { alert("SQL Güncellendi!"); location.reload(); }
+        await _supabase.from('norm_kadro').upsert(Object.values(temp), { onConflict: 'birim,poz,yaka' });
+        location.reload();
     };
     reader.readAsText(file, 'ISO-8859-9');
 }
 
 function updateFilters() {
-    const birimler = [...new Set(db.pos.map(p => p.birim))];
-    document.getElementById('qBirim').innerHTML = '<option value="">Tüm Birimler</option>' + birimler.map(x => `<option value="${x}">${x}</option>`).join('');
+    const u = [...new Set(db.pos.map(p => p.birim))];
+    document.getElementById('qBirim').innerHTML = '<option value="">Tüm Birimler</option>' + u.map(x=>`<option value="${x}">${x}</option>`).join('');
 }
 
+function toggleUpload(s) { document.getElementById('upload-overlay').classList.toggle('hidden', !s); }
 function showView(v, btn) {
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
@@ -222,8 +249,6 @@ function showView(v, btn) {
     document.getElementById('view-' + v).classList.remove('hidden');
     if(v === 'dash') renderCharts();
 }
-
-function toggleUpload(s) { document.getElementById('upload-overlay').classList.toggle('hidden', !s); }
 
 loadData();
 </script>
